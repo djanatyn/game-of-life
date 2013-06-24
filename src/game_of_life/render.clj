@@ -1,6 +1,6 @@
 (ns game-of-life.render
-  (:use quil.core
-        game-of-life.core)
+  (:use game-of-life.core)
+  (:import java.awt.image.BufferedImage java.awt.Color java.io.File javax.imageio.ImageIO)
   (:gen-class))
 
 (def test-grid '[[. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .]
@@ -39,43 +39,20 @@
                  [. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .]
                  [. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .]])
 
-(def grid-state (atom test-grid))
+(defn set-color!
+  "iterates over an image with a function that takes coordinates and returns colors"
+  [image color-chooser]
+  (doseq [x (range (.getWidth image)) y (range (.getHeight image))]
+    (.setRGB image x y (color-chooser x y)))) 
 
-;; settings
-;; --------
-(def tile-size 10)
-(def fps 10)
+(defn grid->image [grid]
+  (let [height (count (first grid)) width (count grid) image (new BufferedImage height width (. BufferedImage TYPE_INT_RGB))]
+    (set-color! image (fn [x y] (.getRGB (if (= (get-tile grid [x y]) 'o) (Color/black) (Color/white)))))
+    image))
 
-;; drawing functions
-;; -----------------
-(defn draw-block [color [x y]]
-  (apply stroke color)
-  (apply fill color)
-  (rect x y tile-size tile-size))
-
-(defn draw-grid [grid]
-  (let [height (count grid)
-        width  (count (first grid))]
-    (doseq [tile (coords [width height])]
-      (case (get-tile grid tile)
-        o (draw-block [0 0 0] (map * [tile-size tile-size] tile))
-        . (draw-block [255 255 255] (map * [tile-size tile-size] tile))))))
-
-;; quil functions
-;; --------------
-(defn setup []
-  (frame-rate fps)
-  (background 0)
-  (stroke-weight 0))
-
-(defn draw []
-  (background 0)
-  (draw-grid @grid-state)
-  (swap! grid-state tick))
+(defn write-file [image filename]
+  (ImageIO/write image "png" (new File filename)))
 
 (defn -main [& args]
-  (defsketch game
-    :title "blobs!"
-    :setup setup
-    :draw draw
-    :size [(* tile-size (count @grid-state)) (* tile-size (count (first @grid-state)))]))
+  (let [timeline (iterate tick test-grid)]
+    (doseq [n (range 100)] (write-file (grid->image (nth timeline n)) (str "out/gen" n ".png")))))
