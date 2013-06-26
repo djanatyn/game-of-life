@@ -1,13 +1,7 @@
 # game-of-life
 
-A Clojure library designed to ... well, that part is up to you.
+A game of life simulation, exporting iterations as pngs with a script to convert to an animated gif.
 
-## Usage
-
-FIXME
-
-## License
-
-Copyright © 2012 FIXME
+Copyright © 2013 FIXME
 
 Distributed under the Eclipse Public License, the same as Clojure.
